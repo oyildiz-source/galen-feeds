@@ -1,0 +1,34 @@
+[
+  {
+    "id": "GG-2026-001",
+    "ref": "GG-2026-001",
+    "status": "active",
+    "category": "excavator-bucket",
+    "condition": "new",
+    "make": "Galen",
+    "model": "GB-1500",
+    "year": 2026,
+    "price": 4200,
+    "currency": "EUR",
+    "vat": "excl",
+    "weight": 850,
+    "hours": 0,
+    "carrier": "20-25 ton",
+    "width": 1500,
+    "capacity": 1.2,
+    "material": "Hardox 450",
+    "city": "Ankara",
+    "country": "Turkiye",
+    "delivery": "exw",
+    "title_en": "Galen 1500mm Digging Bucket for 20-25 ton excavators",
+    "desc_en": "Heavy-duty digging bucket manufactured from Hardox 450 wear plate. CAT-style tooth system. Suitable for general excavation, trenching and loading operations. Made in Turkiye.",
+    "title_tr": "Galen 1500mm Kazi Kovasi - 20-25 ton ekskavatorler icin",
+    "desc_tr": "Hardox 450 asinma plakasindan uretilmis agir hizmet tipi kazi kovasi. CAT tipi dis sistemi. Genel kazi, kanal acma ve yukleme operasyonlari icin uygundur.",
+    "images": [
+      "https://feeds.hb450kesim.com/img/gb-1500-1.jpg"
+    ],
+    "contact": "Galen Grup Sales",
+    "phone": "+90 312 000 00 00",
+    "email": "sales@galengroup.com.tr"
+  }
+]
