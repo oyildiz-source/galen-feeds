@@ -1,0 +1,9 @@
+{
+  "name": "galen-feeds",
+  "version": "1.0.0",
+  "description": "Generates Truck1 / Autoline / MachineSeeker XML feeds from catalog.json",
+  "private": true,
+  "scripts": {
+    "build": "node build.js"
+  }
+}
