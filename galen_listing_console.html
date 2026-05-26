@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GALEN · Multi-Platform Listing Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0A0B;
+    --bg-2:#111114;
+    --bg-3:#1A1A1F;
+    --line:#26262D;
+    --line-2:#33333D;
+    --ink:#EAEAEA;
+    --ink-2:#9A9AA3;
+    --ink-3:#5C5C66;
+    --orange:#FF6B00;
+    --orange-dim:#B14A00;
+    --green:#3FCF8E;
+    --red:#FF3B30;
+    --yellow:#FFD60A;
+    --shadow:0 1px 0 0 rgba(255,255,255,0.04) inset, 0 -1px 0 0 rgba(0,0,0,0.6) inset;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+  button{cursor:pointer;border:none;background:none}
+
+  /* ===== Layout ===== */
+  .app{display:grid;grid-template-rows:48px 1fr 28px;height:100vh}
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 16px;background:var(--bg-2);border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand-mark{
+    width:24px;height:24px;background:var(--orange);
+    display:grid;place-items:center;font-family:'Archivo Narrow';font-weight:700;color:#000;
+    transform:skewX(-12deg);
+  }
+  .brand-mark span{transform:skewX(12deg);font-size:14px}
+  .brand-title{font-family:'Archivo Narrow';font-weight:600;letter-spacing:0.06em;text-transform:uppercase;font-size:14px}
+  .brand-sub{color:var(--ink-3);font-size:11px;letter-spacing:0.18em;text-transform:uppercase;font-family:'IBM Plex Mono'}
+  .topbar-actions{display:flex;align-items:center;gap:8px}
+  .clock{font-family:'IBM Plex Mono';font-size:11px;color:var(--ink-2);letter-spacing:0.1em}
+
+  .main{display:grid;grid-template-columns:300px 1fr 360px;overflow:hidden}
+  .col{display:flex;flex-direction:column;overflow:hidden}
+  .col + .col{border-left:1px solid var(--line)}
+
+  .col-header{
+    padding:10px 14px;background:var(--bg-2);border-bottom:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .col-header h2{
+    font-family:'Archivo Narrow';font-size:11px;font-weight:600;letter-spacing:0.22em;
+    text-transform:uppercase;color:var(--ink-2);
+  }
+  .col-header .badge{
+    font-family:'IBM Plex Mono';font-size:10px;color:var(--ink-3);
+    padding:2px 6px;border:1px solid var(--line-2);
+  }
+  .col-body{flex:1;overflow:auto;padding:0}
+
+  /* ===== Left: product list ===== */
+  .search{
+    padding:10px 12px;border-bottom:1px solid var(--line);background:var(--bg-2);
+    display:flex;gap:8px;
+  }
+  .search input{
+    flex:1;background:var(--bg);border:1px solid var(--line-2);
+    padding:6px 8px;font-family:'IBM Plex Mono';font-size:12px;
+  }
+  .search input:focus{outline:1px solid var(--orange);border-color:var(--orange)}
+  .add-btn{
+    background:var(--orange);color:#000;font-weight:600;font-family:'Archivo Narrow';
+    letter-spacing:0.1em;text-transform:uppercase;font-size:11px;padding:6px 10px;
+  }
+  .add-btn:hover{background:#FF8520}
+
+  .list{display:flex;flex-direction:column}
+  .item{
+    padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer;
+    display:grid;grid-template-columns:1fr auto;gap:4px;position:relative;
+  }
+  .item:hover{background:var(--bg-2)}
+  .item.active{background:var(--bg-2);border-left:2px solid var(--orange);padding-left:12px}
+  .item-title{font-weight:500;font-size:13px;line-height:1.3;color:var(--ink)}
+  .item-meta{font-family:'IBM Plex Mono';font-size:10px;color:var(--ink-3);letter-spacing:0.04em}
+  .item-price{font-family:'IBM Plex Mono';font-size:11px;color:var(--ink-2);text-align:right}
+  .item-cat{font-family:'IBM Plex Mono';font-size:9px;color:var(--orange);text-align:right;letter-spacing:0.1em;text-transform:uppercase}
+  .empty{padding:40px 20px;text-align:center;color:var(--ink-3);font-size:12px}
+
+  /* ===== Middle: editor ===== */
+  .editor{padding:24px 28px;max-width:780px}
+  .form-title{
+    font-family:'Archivo Narrow';font-size:22px;letter-spacing:0.04em;
+    text-transform:uppercase;margin-bottom:4px;
+  }
+  .form-sub{color:var(--ink-3);font-family:'IBM Plex Mono';font-size:11px;letter-spacing:0.1em;margin-bottom:24px}
+
+  .section{margin-bottom:28px}
+  .section-title{
+    font-family:'Archivo Narrow';font-size:11px;font-weight:600;letter-spacing:0.22em;
+    text-transform:uppercase;color:var(--orange);margin-bottom:12px;
+    padding-bottom:6px;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:8px;
+  }
+  .section-title::before{content:"";width:6px;height:6px;background:var(--orange)}
+
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  .field{display:flex;flex-direction:column;gap:4px}
+  .field label{
+    font-family:'IBM Plex Mono';font-size:10px;letter-spacing:0.12em;
+    text-transform:uppercase;color:var(--ink-2);
+  }
+  .field input, .field select, .field textarea{
+    background:var(--bg-2);border:1px solid var(--line-2);
+    padding:8px 10px;font-size:13px;color:var(--ink);
+    transition:border-color 0.15s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{
+    outline:none;border-color:var(--orange);
+  }
+  .field textarea{resize:vertical;min-height:90px;font-family:'IBM Plex Sans'}
+  .field-hint{font-family:'IBM Plex Mono';font-size:9px;color:var(--ink-3);letter-spacing:0.06em;margin-top:2px}
+
+  .image-list{display:flex;flex-direction:column;gap:6px}
+  .image-row{display:flex;gap:6px}
+  .image-row input{flex:1}
+  .image-row button{
+    background:var(--bg-3);border:1px solid var(--line-2);color:var(--ink-2);
+    padding:0 10px;font-size:14px;
+  }
+  .image-row button:hover{background:var(--red);color:#000;border-color:var(--red)}
+  .add-img{
+    background:transparent;border:1px dashed var(--line-2);color:var(--ink-2);
+    padding:6px;font-family:'IBM Plex Mono';font-size:11px;letter-spacing:0.1em;
+    text-transform:uppercase;
+  }
+  .add-img:hover{border-color:var(--orange);color:var(--orange)}
+
+  /* ===== Right: export panel ===== */
+  .export-panel{padding:16px;display:flex;flex-direction:column;gap:12px}
+  .platform{
+    background:var(--bg-2);border:1px solid var(--line);
+    padding:14px;position:relative;
+  }
+  .platform-head{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:10px;
+  }
+  .platform-name{
+    font-family:'Archivo Narrow';font-weight:600;font-size:14px;
+    letter-spacing:0.1em;text-transform:uppercase;
+  }
+  .platform-status{
+    font-family:'IBM Plex Mono';font-size:9px;letter-spacing:0.15em;
+    padding:2px 6px;background:var(--bg-3);color:var(--ink-3);
+  }
+  .platform-status.ready{color:var(--green);background:rgba(63,207,142,0.1)}
+  .platform-desc{font-size:11px;color:var(--ink-3);margin-bottom:10px;line-height:1.5}
+  .platform-format{
+    font-family:'IBM Plex Mono';font-size:10px;color:var(--ink-2);
+    padding:6px 8px;background:var(--bg);border:1px solid var(--line);margin-bottom:10px;
+  }
+  .platform-format b{color:var(--orange)}
+  .platform-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .btn{
+    padding:8px;font-family:'Archivo Narrow';font-size:11px;font-weight:600;
+    letter-spacing:0.12em;text-transform:uppercase;
+    border:1px solid var(--line-2);background:var(--bg-3);color:var(--ink);
+    transition:all 0.15s;
+  }
+  .btn:hover{background:var(--bg);border-color:var(--ink-2)}
+  .btn.primary{background:var(--orange);color:#000;border-color:var(--orange)}
+  .btn.primary:hover{background:#FF8520;border-color:#FF8520}
+
+  .mega-export{
+    margin-top:8px;padding:14px;background:linear-gradient(135deg,#1A1A1F 0%,#0A0A0B 100%);
+    border:1px solid var(--orange);position:relative;overflow:hidden;
+  }
+  .mega-export::before{
+    content:"";position:absolute;top:0;right:0;width:60px;height:60px;
+    background:radial-gradient(circle, rgba(255,107,0,0.2), transparent 70%);
+  }
+  .mega-export h3{
+    font-family:'Archivo Narrow';font-size:13px;font-weight:600;
+    letter-spacing:0.12em;text-transform:uppercase;color:var(--orange);
+    margin-bottom:4px;
+  }
+  .mega-export p{font-size:11px;color:var(--ink-2);margin-bottom:10px}
+  .mega-btn{
+    width:100%;padding:12px;background:var(--orange);color:#000;
+    font-family:'Archivo Narrow';font-weight:700;font-size:13px;
+    letter-spacing:0.15em;text-transform:uppercase;
+  }
+  .mega-btn:hover{background:#FF8520}
+
+  /* ===== Bottom status bar ===== */
+  .statusbar{
+    background:var(--bg-2);border-top:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 14px;font-family:'IBM Plex Mono';font-size:10px;color:var(--ink-3);
+    letter-spacing:0.1em;
+  }
+  .status-left{display:flex;gap:16px;align-items:center}
+  .status-right{display:flex;gap:16px;align-items:center}
+  .dot{display:inline-block;width:6px;height:6px;background:var(--green);margin-right:6px}
+  .dot.idle{background:var(--ink-3)}
+
+  /* ===== Empty editor ===== */
+  .editor-empty{
+    height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    color:var(--ink-3);
+  }
+  .editor-empty-mark{
+    font-family:'Archivo Narrow';font-size:120px;font-weight:700;color:var(--bg-3);
+    letter-spacing:-0.04em;line-height:1;margin-bottom:20px;
+  }
+  .editor-empty-text{font-family:'IBM Plex Mono';letter-spacing:0.2em;text-transform:uppercase;font-size:11px}
+
+  /* ===== Toast ===== */
+  .toast{
+    position:fixed;bottom:40px;right:20px;
+    background:var(--bg-3);border:1px solid var(--orange);
+    padding:12px 18px;font-size:12px;color:var(--ink);
+    transform:translateX(120%);transition:transform 0.3s;z-index:100;
+    box-shadow:0 8px 24px rgba(0,0,0,0.4);
+  }
+  .toast.show{transform:translateX(0)}
+  .toast.success{border-color:var(--green)}
+  .toast.error{border-color:var(--red)}
+
+  /* ===== Action bar in editor ===== */
+  .editor-actions{
+    position:sticky;bottom:0;background:linear-gradient(to top, var(--bg) 60%, transparent);
+    padding:20px 0 10px;margin-top:20px;display:flex;justify-content:space-between;gap:10px;
+  }
+  .danger-btn{background:transparent;border:1px solid var(--line-2);color:var(--ink-3);padding:8px 14px;font-family:'Archivo Narrow';font-size:11px;letter-spacing:0.12em;text-transform:uppercase}
+  .danger-btn:hover{color:var(--red);border-color:var(--red)}
+  .save-btn{background:var(--orange);color:#000;padding:8px 20px;font-family:'Archivo Narrow';font-weight:600;font-size:11px;letter-spacing:0.12em;text-transform:uppercase}
+  .save-btn:hover{background:#FF8520}
+
+  /* ===== Scrollbar ===== */
+  ::-webkit-scrollbar{width:8px;height:8px}
+  ::-webkit-scrollbar-track{background:var(--bg)}
+  ::-webkit-scrollbar-thumb{background:var(--line-2)}
+  ::-webkit-scrollbar-thumb:hover{background:var(--ink-3)}
+
+  /* ===== Header utility ===== */
+  .icon-btn{
+    background:var(--bg-3);border:1px solid var(--line-2);color:var(--ink-2);
+    padding:5px 10px;font-family:'IBM Plex Mono';font-size:10px;
+    letter-spacing:0.12em;text-transform:uppercase;
+  }
+  .icon-btn:hover{color:var(--orange);border-color:var(--orange)}
+
+  /* Responsive collapse */
+  @media (max-width: 1100px){
+    .main{grid-template-columns:240px 1fr 320px}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ===== TOPBAR ===== -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark"><span>G</span></div>
+      <div>
+        <div class="brand-title">Galen · Listing Console</div>
+        <div class="brand-sub">Multi-platform export terminal</div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button class="icon-btn" id="btnImport">↑ Import</button>
+      <button class="icon-btn" id="btnExportAll">↓ Backup</button>
+      <button class="icon-btn" id="btnGhSettings">⚙ Cloud</button>
+      <button class="icon-btn" id="btnPublish" style="background:var(--orange);color:#000;border-color:var(--orange)">▲ Publish</button>
+      <span class="clock" id="clock">00:00:00</span>
+    </div>
+  </header>
+
+  <!-- ===== MAIN ===== -->
+  <div class="main">
+
+    <!-- LEFT: PRODUCT LIST -->
+    <aside class="col">
+      <div class="col-header">
+        <h2>Catalog</h2>
+        <span class="badge" id="catalogCount">0 items</span>
+      </div>
+      <div class="search">
+        <input type="text" id="searchBox" placeholder="search make / model..." />
+        <button class="add-btn" id="btnNew">+ New</button>
+      </div>
+      <div class="col-body">
+        <div class="list" id="productList"></div>
+      </div>
+    </aside>
+
+    <!-- MIDDLE: EDITOR -->
+    <main class="col">
+      <div class="col-header">
+        <h2 id="editorTitle">Editor</h2>
+        <span class="badge" id="editorRef">—</span>
+      </div>
+      <div class="col-body" id="editorScroll">
+        <div id="editorEmpty" class="editor-empty">
+          <div class="editor-empty-mark">G/</div>
+          <div class="editor-empty-text">Select or create a product</div>
+        </div>
+        <div id="editorForm" style="display:none">
+          <div class="editor">
+
+            <div class="form-title" id="formTitle">New Listing</div>
+            <div class="form-sub" id="formSub">Reference will be generated</div>
+
+            <!-- 1. IDENTITY -->
+            <div class="section">
+              <div class="section-title">Identity</div>
+              <div class="grid-3">
+                <div class="field">
+                  <label>Reference *</label>
+                  <input type="text" id="f_ref" placeholder="GG-2026-001" />
+                </div>
+                <div class="field">
+                  <label>Category *</label>
+                  <select id="f_category">
+                    <option value="excavator-bucket">Excavator Bucket</option>
+                    <option value="excavator-attachment">Excavator Attachment</option>
+                    <option value="hydraulic-breaker">Hydraulic Breaker</option>
+                    <option value="screening-bucket">Screening Bucket</option>
+                    <option value="crusher-bucket">Crusher Bucket</option>
+                    <option value="quick-coupler">Quick Coupler</option>
+                    <option value="scissor-lift">Scissor Lift</option>
+                    <option value="boom-lift">Boom Lift</option>
+                    <option value="manlift">Manlift</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Condition *</label>
+                  <select id="f_condition">
+                    <option value="new">New</option>
+                    <option value="used">Used</option>
+                    <option value="refurbished">Refurbished</option>
+                  </select>
+                </div>
+              </div>
+              <div class="grid-3" style="margin-top:12px">
+                <div class="field">
+                  <label>Status *</label>
+                  <select id="f_status">
+                    <option value="active">Active (feed'e çıkar)</option>
+                    <option value="draft">Draft (gizli)</option>
+                    <option value="sold">Sold (gizli)</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Make</label>
+                  <input type="text" id="f_make" placeholder="Galen / Geith / ..." />
+                </div>
+                <div class="field">
+                  <label>Model</label>
+                  <input type="text" id="f_model" placeholder="GS-1012H / HMK-300" />
+                </div>
+                <div class="field">
+                  <label>Year</label>
+                  <input type="number" id="f_year" min="1990" max="2030" placeholder="2026" />
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. PRICING -->
+            <div class="section">
+              <div class="section-title">Pricing</div>
+              <div class="grid-3">
+                <div class="field">
+                  <label>Price *</label>
+                  <input type="number" id="f_price" placeholder="0.00" step="0.01" />
+                </div>
+                <div class="field">
+                  <label>Currency</label>
+                  <select id="f_currency">
+                    <option value="EUR">EUR</option>
+                    <option value="USD">USD</option>
+                    <option value="TRY">TRY</option>
+                    <option value="GBP">GBP</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>VAT</label>
+                  <select id="f_vat">
+                    <option value="excl">Excl. VAT</option>
+                    <option value="incl">Incl. VAT</option>
+                    <option value="negotiable">Negotiable</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. SPECS -->
+            <div class="section">
+              <div class="section-title">Specifications</div>
+              <div class="grid-3">
+                <div class="field">
+                  <label>Weight (kg)</label>
+                  <input type="number" id="f_weight" placeholder="850" />
+                </div>
+                <div class="field">
+                  <label>Working hours</label>
+                  <input type="number" id="f_hours" placeholder="0 for new" />
+                </div>
+                <div class="field">
+                  <label>Carrier weight class</label>
+                  <input type="text" id="f_carrier" placeholder="20-25 ton" />
+                </div>
+              </div>
+              <div class="grid-3" style="margin-top:12px">
+                <div class="field">
+                  <label>Width (mm)</label>
+                  <input type="number" id="f_width" placeholder="1500" />
+                </div>
+                <div class="field">
+                  <label>Capacity (m³)</label>
+                  <input type="number" id="f_capacity" step="0.01" placeholder="1.2" />
+                </div>
+                <div class="field">
+                  <label>Material</label>
+                  <input type="text" id="f_material" placeholder="Hardox 450 / S355" />
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. LOCATION -->
+            <div class="section">
+              <div class="section-title">Location & Delivery</div>
+              <div class="grid-3">
+                <div class="field">
+                  <label>City</label>
+                  <input type="text" id="f_city" value="Ankara" />
+                </div>
+                <div class="field">
+                  <label>Country</label>
+                  <input type="text" id="f_country" value="Türkiye" />
+                </div>
+                <div class="field">
+                  <label>Delivery terms</label>
+                  <select id="f_delivery">
+                    <option value="exw">EXW Ankara</option>
+                    <option value="fob">FOB İstanbul</option>
+                    <option value="cif">CIF</option>
+                    <option value="dap">DAP</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. DESCRIPTIONS -->
+            <div class="section">
+              <div class="section-title">Descriptions</div>
+              <div class="field">
+                <label>Title (English) *</label>
+                <input type="text" id="f_title_en" placeholder="Galen 1500mm Digging Bucket for 20-25 ton Excavators" />
+              </div>
+              <div class="field" style="margin-top:12px">
+                <label>Description (English) *</label>
+                <textarea id="f_desc_en" placeholder="Manufactured from Hardox 450 wear plate..."></textarea>
+              </div>
+              <div class="field" style="margin-top:12px">
+                <label>Title (Türkçe)</label>
+                <input type="text" id="f_title_tr" placeholder="Galen 1500mm Kazı Kovası" />
+              </div>
+              <div class="field" style="margin-top:12px">
+                <label>Description (Türkçe)</label>
+                <textarea id="f_desc_tr" placeholder="Hardox 450 malzemeden üretilmiştir..."></textarea>
+              </div>
+            </div>
+
+            <!-- 6. IMAGES -->
+            <div class="section">
+              <div class="section-title">Images</div>
+              <div class="field-hint" style="margin-bottom:8px">Public HTTPS URLs only. First image = main photo.</div>
+              <div class="image-list" id="imageList"></div>
+              <button class="add-img" id="btnAddImage" style="margin-top:8px">+ Add image URL</button>
+            </div>
+
+            <!-- 7. CONTACT -->
+            <div class="section">
+              <div class="section-title">Seller Contact</div>
+              <div class="grid-2">
+                <div class="field">
+                  <label>Contact name</label>
+                  <input type="text" id="f_contact" placeholder="Sales Department" />
+                </div>
+                <div class="field">
+                  <label>Phone</label>
+                  <input type="text" id="f_phone" placeholder="+90 ..." />
+                </div>
+              </div>
+              <div class="field" style="margin-top:12px">
+                <label>Email</label>
+                <input type="email" id="f_email" placeholder="sales@galengroup.com.tr" />
+              </div>
+            </div>
+
+            <div class="editor-actions">
+              <button class="danger-btn" id="btnDelete">⌫ Delete</button>
+              <button class="save-btn" id="btnSave">Save Listing</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- RIGHT: EXPORT PANEL -->
+    <aside class="col">
+      <div class="col-header">
+        <h2>Export</h2>
+        <span class="badge" id="exportCount">0 selected</span>
+      </div>
+      <div class="col-body export-panel">
+
+        <div class="mega-export">
+          <h3>⚡ Push to all platforms</h3>
+          <p>Generates Truck1 + Autoline + MachineSeeker feed files for every product in the catalog.</p>
+          <button class="mega-btn" id="btnExportAllPlatforms">Generate 3 files</button>
+        </div>
+
+        <div class="platform" data-platform="truck1">
+          <div class="platform-head">
+            <span class="platform-name">⬡ Truck1</span>
+            <span class="platform-status ready" id="status-truck1">Ready</span>
+          </div>
+          <div class="platform-desc">Heavy equipment marketplace · Lectura group</div>
+          <div class="platform-format">Format: <b>XML</b> feed · multilang descriptions</div>
+          <div class="platform-actions">
+            <button class="btn" data-export="truck1-current">Current</button>
+            <button class="btn primary" data-export="truck1-all">All catalog</button>
+          </div>
+        </div>
+
+        <div class="platform" data-platform="autoline">
+          <div class="platform-head">
+            <span class="platform-name">⬡ Autoline</span>
+            <span class="platform-status ready" id="status-autoline">Ready</span>
+          </div>
+          <div class="platform-desc">Construction equipment B2B platform · Lectura group</div>
+          <div class="platform-format">Format: <b>XML</b> feed · Truck1-compatible schema</div>
+          <div class="platform-actions">
+            <button class="btn" data-export="autoline-current">Current</button>
+            <button class="btn primary" data-export="autoline-all">All catalog</button>
+          </div>
+        </div>
+
+        <div class="platform" data-platform="machineseeker">
+          <div class="platform-head">
+            <span class="platform-name">⬡ MachineSeeker</span>
+            <span class="platform-status ready" id="status-machineseeker">Ready</span>
+          </div>
+          <div class="platform-desc">European industrial machinery marketplace</div>
+          <div class="platform-format">Format: <b>XML</b> feed · MachineSeeker schema</div>
+          <div class="platform-actions">
+            <button class="btn" data-export="ms-current">Current</button>
+            <button class="btn primary" data-export="ms-all">All catalog</button>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+  </div>
+
+  <!-- ===== STATUS ===== -->
+  <footer class="statusbar">
+    <div class="status-left">
+      <span><span class="dot"></span>SYS ONLINE</span>
+      <span id="storageInfo">LOCAL · 0 KB</span>
+    </div>
+    <div class="status-right">
+      <span>GALEN GRUP · KAZAN/ANKARA</span>
+      <span id="lastSave">No save yet</span>
+    </div>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ===== GITHUB CLOUD MODAL ===== -->
+<div id="ghModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;align-items:center;justify-content:center">
+  <div style="background:var(--bg-2);border:1px solid var(--orange);width:480px;max-width:92vw;padding:24px">
+    <div style="font-family:'Archivo Narrow';font-size:18px;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px">Cloud Publish · GitHub</div>
+    <div style="font-family:'IBM Plex Mono';font-size:10px;color:var(--ink-3);letter-spacing:0.08em;margin-bottom:18px">Pushes catalog.json to your repo · Cloudflare rebuilds the feeds</div>
+
+    <div style="background:rgba(255,107,0,0.08);border:1px solid var(--orange-dim);padding:10px;font-size:11px;color:var(--ink-2);line-height:1.5;margin-bottom:18px">
+      🔒 Token yalnızca bu tarayıcıda (localStorage) saklanır, hiçbir yere gönderilmez. GitHub'da <b>fine-grained PAT</b> oluştur, sadece <b>galen-feeds</b> reposuna, <b>Contents: Read &amp; Write</b> izniyle.
+    </div>
+
+    <div class="field" style="margin-bottom:12px">
+      <label>GitHub Owner (kullanıcı/org)</label>
+      <input type="text" id="gh_owner" placeholder="orkunyildiz" />
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label>Repo</label>
+      <input type="text" id="gh_repo" value="galen-feeds" />
+    </div>
+    <div class="grid-2" style="margin-bottom:12px">
+      <div class="field">
+        <label>Branch</label>
+        <input type="text" id="gh_branch" value="main" />
+      </div>
+      <div class="field">
+        <label>Catalog path</label>
+        <input type="text" id="gh_path" value="catalog.json" />
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:18px">
+      <label>Personal Access Token (fine-grained)</label>
+      <input type="password" id="gh_token" placeholder="github_pat_..." />
+      <div class="field-hint">Saved locally only. github.com → Settings → Developer settings → Fine-grained tokens.</div>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="danger-btn" id="ghCancel">Close</button>
+      <button class="save-btn" id="ghSave">Save settings</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="importFile" accept=".json" style="display:none" />
+
+<script>
+/* ============================================================
+   GALEN MULTI-PLATFORM LISTING CONSOLE
+   Self-contained. Persists to localStorage.
+   Generates Truck1 + Autoline + MachineSeeker XML feeds.
+============================================================ */
+
+const STORAGE_KEY = 'galen_listings_v1';
+let catalog = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+let currentId = null;
+
+/* ---------- Helpers ---------- */
+function $(id){ return document.getElementById(id); }
+function uid(){ return 'GG-' + new Date().getFullYear() + '-' + String(Date.now()).slice(-6); }
+function save(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(catalog));
+  updateStorageInfo();
+  $('lastSave').textContent = 'Saved · ' + new Date().toLocaleTimeString();
+}
+function escapeXml(unsafe){
+  if(unsafe == null) return '';
+  return String(unsafe)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+}
+function toast(msg, type='info'){
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(()=>t.classList.remove('show'), 2600);
+}
+function downloadFile(filename, content, mime='application/xml'){
+  const blob = new Blob([content], {type: mime});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function updateStorageInfo(){
+  const bytes = new Blob([JSON.stringify(catalog)]).size;
+  $('storageInfo').textContent = `LOCAL · ${(bytes/1024).toFixed(1)} KB · ${catalog.length} items`;
+  $('catalogCount').textContent = catalog.length + ' items';
+}
+function clock(){
+  const d = new Date();
+  $('clock').textContent = d.toLocaleTimeString('tr-TR', {hour12:false});
+}
+setInterval(clock, 1000); clock();
+
+/* ---------- List rendering ---------- */
+function renderList(filter=''){
+  const list = $('productList');
+  list.innerHTML = '';
+  const filtered = catalog.filter(p => {
+    if(!filter) return true;
+    const f = filter.toLowerCase();
+    return (p.make||'').toLowerCase().includes(f)
+        || (p.model||'').toLowerCase().includes(f)
+        || (p.title_en||'').toLowerCase().includes(f)
+        || (p.ref||'').toLowerCase().includes(f);
+  });
+  if(filtered.length === 0){
+    list.innerHTML = '<div class="empty">No products yet. Click "+ New" to begin.</div>';
+    return;
+  }
+  filtered.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'item' + (p.id === currentId ? ' active' : '');
+    div.innerHTML = `
+      <div>
+        <div class="item-title">${escapeXml(p.title_en || p.make + ' ' + p.model || 'Untitled')}</div>
+        <div class="item-meta">${escapeXml(p.ref || '')} · ${escapeXml(p.year || '—')}</div>
+      </div>
+      <div>
+        <div class="item-price">${escapeXml(p.price || '—')} ${escapeXml(p.currency || '')}</div>
+        <div class="item-cat">${escapeXml((p.category||'').replace(/-/g,' '))}</div>
+      </div>
+    `;
+    div.onclick = ()=> selectProduct(p.id);
+    list.appendChild(div);
+  });
+}
+
+/* ---------- Form ---------- */
+function blankProduct(){
+  return {
+    id: uid(),
+    ref: uid(),
+    category: 'excavator-bucket',
+    status: 'active',
+    condition: 'new',
+    make: 'Galen',
+    model: '',
+    year: new Date().getFullYear(),
+    price: '',
+    currency: 'EUR',
+    vat: 'excl',
+    weight: '',
+    hours: 0,
+    carrier: '',
+    width: '',
+    capacity: '',
+    material: 'Hardox 450',
+    city: 'Ankara',
+    country: 'Türkiye',
+    delivery: 'exw',
+    title_en: '',
+    desc_en: '',
+    title_tr: '',
+    desc_tr: '',
+    images: [],
+    contact: 'Galen Grup Sales',
+    phone: '+90 312 ',
+    email: 'sales@galengroup.com.tr',
+    created: new Date().toISOString()
+  };
+}
+
+function loadFormFrom(p){
+  $('f_ref').value = p.ref;
+  $('f_category').value = p.category;
+  $('f_condition').value = p.condition;
+  if($('f_status')) $('f_status').value = p.status || 'active';
+  $('f_make').value = p.make;
+  $('f_model').value = p.model;
+  $('f_year').value = p.year;
+  $('f_price').value = p.price;
+  $('f_currency').value = p.currency;
+  $('f_vat').value = p.vat;
+  $('f_weight').value = p.weight;
+  $('f_hours').value = p.hours;
+  $('f_carrier').value = p.carrier;
+  $('f_width').value = p.width;
+  $('f_capacity').value = p.capacity;
+  $('f_material').value = p.material;
+  $('f_city').value = p.city;
+  $('f_country').value = p.country;
+  $('f_delivery').value = p.delivery;
+  $('f_title_en').value = p.title_en;
+  $('f_desc_en').value = p.desc_en;
+  $('f_title_tr').value = p.title_tr;
+  $('f_desc_tr').value = p.desc_tr;
+  $('f_contact').value = p.contact;
+  $('f_phone').value = p.phone;
+  $('f_email').value = p.email;
+  renderImages(p.images || []);
+  $('formTitle').textContent = p.title_en || (p.make + ' ' + p.model) || 'New Listing';
+  $('formSub').textContent = `Ref ${p.ref} · Created ${p.created ? new Date(p.created).toLocaleDateString() : '—'}`;
+  $('editorRef').textContent = p.ref;
+}
+
+function readForm(p){
+  p.ref = $('f_ref').value.trim();
+  p.category = $('f_category').value;
+  p.condition = $('f_condition').value;
+  if($('f_status')) p.status = $('f_status').value;
+  p.make = $('f_make').value.trim();
+  p.model = $('f_model').value.trim();
+  p.year = parseInt($('f_year').value) || new Date().getFullYear();
+  p.price = parseFloat($('f_price').value) || 0;
+  p.currency = $('f_currency').value;
+  p.vat = $('f_vat').value;
+  p.weight = $('f_weight').value;
+  p.hours = parseInt($('f_hours').value) || 0;
+  p.carrier = $('f_carrier').value.trim();
+  p.width = $('f_width').value;
+  p.capacity = $('f_capacity').value;
+  p.material = $('f_material').value.trim();
+  p.city = $('f_city').value.trim();
+  p.country = $('f_country').value.trim();
+  p.delivery = $('f_delivery').value;
+  p.title_en = $('f_title_en').value.trim();
+  p.desc_en = $('f_desc_en').value.trim();
+  p.title_tr = $('f_title_tr').value.trim();
+  p.desc_tr = $('f_desc_tr').value.trim();
+  p.contact = $('f_contact').value.trim();
+  p.phone = $('f_phone').value.trim();
+  p.email = $('f_email').value.trim();
+  p.images = collectImages();
+  return p;
+}
+
+function renderImages(images){
+  const wrap = $('imageList');
+  wrap.innerHTML = '';
+  images.forEach((url, i) => addImageRow(url, i));
+}
+function addImageRow(url='', i=null){
+  const wrap = $('imageList');
+  const row = document.createElement('div');
+  row.className = 'image-row';
+  row.innerHTML = `
+    <input type="url" placeholder="https://..." value="${escapeXml(url)}" />
+    <button title="Remove">×</button>
+  `;
+  row.querySelector('button').onclick = ()=> row.remove();
+  wrap.appendChild(row);
+}
+function collectImages(){
+  return [...document.querySelectorAll('#imageList input')]
+    .map(i => i.value.trim())
+    .filter(Boolean);
+}
+
+/* ---------- CRUD ---------- */
+function selectProduct(id){
+  currentId = id;
+  const p = catalog.find(x => x.id === id);
+  if(!p) return;
+  $('editorEmpty').style.display = 'none';
+  $('editorForm').style.display = 'block';
+  loadFormFrom(p);
+  renderList($('searchBox').value);
+}
+function newProduct(){
+  const p = blankProduct();
+  catalog.unshift(p);
+  currentId = p.id;
+  save();
+  $('editorEmpty').style.display = 'none';
+  $('editorForm').style.display = 'block';
+  loadFormFrom(p);
+  renderList();
+  toast('New listing created', 'success');
+}
+function saveCurrent(){
+  if(!currentId) return;
+  const p = catalog.find(x => x.id === currentId);
+  if(!p) return;
+  readForm(p);
+  save();
+  renderList($('searchBox').value);
+  $('formTitle').textContent = p.title_en || (p.make + ' ' + p.model) || 'New Listing';
+  toast('Listing saved', 'success');
+}
+function deleteCurrent(){
+  if(!currentId) return;
+  if(!confirm('Delete this listing?')) return;
+  catalog = catalog.filter(x => x.id !== currentId);
+  currentId = null;
+  save();
+  $('editorEmpty').style.display = 'flex';
+  $('editorForm').style.display = 'none';
+  renderList();
+  toast('Listing deleted', 'success');
+}
+
+/* ============================================================
+   PLATFORM EXPORTERS
+============================================================ */
+
+/* ---- TRUCK1 XML ---- */
+function exportTruck1(products){
+  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+  xml += '<ads>\n';
+  products.forEach(p => {
+    xml += '  <ad>\n';
+    xml += `    <id>${escapeXml(p.ref)}</id>\n`;
+    xml += `    <category>${escapeXml(p.category)}</category>\n`;
+    xml += `    <condition>${escapeXml(p.condition)}</condition>\n`;
+    xml += `    <make>${escapeXml(p.make)}</make>\n`;
+    xml += `    <model>${escapeXml(p.model)}</model>\n`;
+    xml += `    <year>${escapeXml(p.year)}</year>\n`;
+    xml += `    <price>${escapeXml(p.price)}</price>\n`;
+    xml += `    <currency>${escapeXml(p.currency)}</currency>\n`;
+    xml += `    <vat>${escapeXml(p.vat)}</vat>\n`;
+    if(p.hours) xml += `    <working_hours>${escapeXml(p.hours)}</working_hours>\n`;
+    if(p.weight) xml += `    <weight units="kg">${escapeXml(p.weight)}</weight>\n`;
+    xml += `    <location>\n`;
+    xml += `      <city>${escapeXml(p.city)}</city>\n`;
+    xml += `      <country>${escapeXml(p.country)}</country>\n`;
+    xml += `    </location>\n`;
+    xml += `    <delivery_terms>${escapeXml(p.delivery)}</delivery_terms>\n`;
+    if(p.title_en) xml += `    <title lang="en">${escapeXml(p.title_en)}</title>\n`;
+    if(p.title_tr) xml += `    <title lang="tr">${escapeXml(p.title_tr)}</title>\n`;
+    if(p.desc_en) xml += `    <description lang="en">${escapeXml(p.desc_en)}</description>\n`;
+    if(p.desc_tr) xml += `    <description lang="tr">${escapeXml(p.desc_tr)}</description>\n`;
+    xml += `    <specifications>\n`;
+    if(p.carrier) xml += `      <carrier_class>${escapeXml(p.carrier)}</carrier_class>\n`;
+    if(p.width) xml += `      <width_mm>${escapeXml(p.width)}</width_mm>\n`;
+    if(p.capacity) xml += `      <capacity_m3>${escapeXml(p.capacity)}</capacity_m3>\n`;
+    if(p.material) xml += `      <material>${escapeXml(p.material)}</material>\n`;
+    xml += `    </specifications>\n`;
+    if(p.images && p.images.length){
+      xml += `    <photos>\n`;
+      p.images.forEach(img => { xml += `      <photo>${escapeXml(img)}</photo>\n`; });
+      xml += `    </photos>\n`;
+    }
+    xml += `    <contact>\n`;
+    xml += `      <name>${escapeXml(p.contact)}</name>\n`;
+    xml += `      <phone>${escapeXml(p.phone)}</phone>\n`;
+    xml += `      <email>${escapeXml(p.email)}</email>\n`;
+    xml += `    </contact>\n`;
+    xml += '  </ad>\n';
+  });
+  xml += '</ads>\n';
+  return xml;
+}
+
+/* ---- AUTOLINE XML ---- */
+function exportAutoline(products){
+  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+  xml += '<autoline_export version="2.0">\n';
+  xml += '  <vehicles>\n';
+  products.forEach(p => {
+    xml += '    <vehicle>\n';
+    xml += `      <ad_id>${escapeXml(p.ref)}</ad_id>\n`;
+    xml += `      <type>${escapeXml(p.category)}</type>\n`;
+    xml += `      <state>${escapeXml(p.condition)}</state>\n`;
+    xml += `      <brand>${escapeXml(p.make)}</brand>\n`;
+    xml += `      <model>${escapeXml(p.model)}</model>\n`;
+    xml += `      <year_built>${escapeXml(p.year)}</year_built>\n`;
+    xml += `      <price>\n`;
+    xml += `        <amount>${escapeXml(p.price)}</amount>\n`;
+    xml += `        <currency>${escapeXml(p.currency)}</currency>\n`;
+    xml += `        <vat>${escapeXml(p.vat)}</vat>\n`;
+    xml += `      </price>\n`;
+    if(p.hours) xml += `      <hours_used>${escapeXml(p.hours)}</hours_used>\n`;
+    if(p.weight) xml += `      <weight_kg>${escapeXml(p.weight)}</weight_kg>\n`;
+    xml += `      <location_city>${escapeXml(p.city)}</location_city>\n`;
+    xml += `      <location_country>${escapeXml(p.country)}</location_country>\n`;
+    xml += `      <incoterms>${escapeXml(p.delivery.toUpperCase())}</incoterms>\n`;
+    xml += `      <descriptions>\n`;
+    if(p.title_en) xml += `        <text lang="en" type="title">${escapeXml(p.title_en)}</text>\n`;
+    if(p.title_tr) xml += `        <text lang="tr" type="title">${escapeXml(p.title_tr)}</text>\n`;
+    if(p.desc_en) xml += `        <text lang="en" type="body">${escapeXml(p.desc_en)}</text>\n`;
+    if(p.desc_tr) xml += `        <text lang="tr" type="body">${escapeXml(p.desc_tr)}</text>\n`;
+    xml += `      </descriptions>\n`;
+    xml += `      <tech_params>\n`;
+    if(p.carrier) xml += `        <param name="carrier_class">${escapeXml(p.carrier)}</param>\n`;
+    if(p.width) xml += `        <param name="width_mm">${escapeXml(p.width)}</param>\n`;
+    if(p.capacity) xml += `        <param name="capacity_m3">${escapeXml(p.capacity)}</param>\n`;
+    if(p.material) xml += `        <param name="material">${escapeXml(p.material)}</param>\n`;
+    xml += `      </tech_params>\n`;
+    if(p.images && p.images.length){
+      xml += `      <images>\n`;
+      p.images.forEach((img,i) => { xml += `        <image position="${i+1}">${escapeXml(img)}</image>\n`; });
+      xml += `      </images>\n`;
+    }
+    xml += `      <seller>\n`;
+    xml += `        <name>${escapeXml(p.contact)}</name>\n`;
+    xml += `        <phone>${escapeXml(p.phone)}</phone>\n`;
+    xml += `        <email>${escapeXml(p.email)}</email>\n`;
+    xml += `      </seller>\n`;
+    xml += '    </vehicle>\n';
+  });
+  xml += '  </vehicles>\n';
+  xml += '</autoline_export>\n';
+  return xml;
+}
+
+/* ---- MACHINESEEKER XML ---- */
+function exportMachineseeker(products){
+  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+  xml += '<machines xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n';
+  products.forEach(p => {
+    xml += '  <machine>\n';
+    xml += `    <vendor_id>${escapeXml(p.ref)}</vendor_id>\n`;
+    xml += `    <category>${escapeXml(p.category)}</category>\n`;
+    xml += `    <condition>${escapeXml(p.condition)}</condition>\n`;
+    xml += `    <manufacturer>${escapeXml(p.make)}</manufacturer>\n`;
+    xml += `    <model>${escapeXml(p.model)}</model>\n`;
+    xml += `    <year>${escapeXml(p.year)}</year>\n`;
+    xml += `    <price>${escapeXml(p.price)}</price>\n`;
+    xml += `    <currency>${escapeXml(p.currency)}</currency>\n`;
+    xml += `    <price_includes_vat>${p.vat === 'incl' ? 'true' : 'false'}</price_includes_vat>\n`;
+    if(p.hours) xml += `    <operating_hours>${escapeXml(p.hours)}</operating_hours>\n`;
+    if(p.weight) xml += `    <weight_kg>${escapeXml(p.weight)}</weight_kg>\n`;
+    xml += `    <location_zip></location_zip>\n`;
+    xml += `    <location_city>${escapeXml(p.city)}</location_city>\n`;
+    xml += `    <location_country>${escapeXml(p.country)}</location_country>\n`;
+    // MachineSeeker prefers a single title and a single description; we use English as primary.
+    xml += `    <title><![CDATA[${p.title_en || (p.make + ' ' + p.model)}]]></title>\n`;
+    // Build a rich description block combining EN + technical specs
+    let desc = p.desc_en || '';
+    const techLines = [];
+    if(p.carrier) techLines.push(`Carrier class: ${p.carrier}`);
+    if(p.width) techLines.push(`Width: ${p.width} mm`);
+    if(p.capacity) techLines.push(`Capacity: ${p.capacity} m³`);
+    if(p.material) techLines.push(`Material: ${p.material}`);
+    if(p.delivery) techLines.push(`Delivery: ${p.delivery.toUpperCase()}`);
+    if(techLines.length) desc += '\n\nTechnical:\n' + techLines.join('\n');
+    xml += `    <description><![CDATA[${desc}]]></description>\n`;
+    if(p.images && p.images.length){
+      xml += `    <images>\n`;
+      p.images.forEach(img => { xml += `      <image>${escapeXml(img)}</image>\n`; });
+      xml += `    </images>\n`;
+    }
+    xml += `    <seller_contact>${escapeXml(p.contact)}</seller_contact>\n`;
+    xml += `    <seller_phone>${escapeXml(p.phone)}</seller_phone>\n`;
+    xml += `    <seller_email>${escapeXml(p.email)}</seller_email>\n`;
+    xml += '  </machine>\n';
+  });
+  xml += '</machines>\n';
+  return xml;
+}
+
+/* ---------- Export dispatcher ---------- */
+function runExport(action){
+  // Ensure current edits are saved before exporting
+  if(currentId) saveCurrent();
+
+  let target = [];
+  if(action.endsWith('-current')){
+    if(!currentId){ toast('No product selected', 'error'); return; }
+    target = catalog.filter(p => p.id === currentId);
+  } else {
+    target = catalog;
+  }
+  if(target.length === 0){ toast('Catalog is empty', 'error'); return; }
+
+  const stamp = new Date().toISOString().slice(0,10);
+
+  if(action.startsWith('truck1')){
+    downloadFile(`truck1_feed_${stamp}.xml`, exportTruck1(target));
+    toast(`Truck1 XML exported · ${target.length} items`, 'success');
+  } else if(action.startsWith('autoline')){
+    downloadFile(`autoline_feed_${stamp}.xml`, exportAutoline(target));
+    toast(`Autoline XML exported · ${target.length} items`, 'success');
+  } else if(action.startsWith('ms')){
+    downloadFile(`machineseeker_feed_${stamp}.xml`, exportMachineseeker(target));
+    toast(`MachineSeeker XML exported · ${target.length} items`, 'success');
+  }
+}
+
+function exportAllPlatforms(){
+  if(currentId) saveCurrent();
+  if(catalog.length === 0){ toast('Catalog is empty', 'error'); return; }
+  const stamp = new Date().toISOString().slice(0,10);
+  downloadFile(`truck1_feed_${stamp}.xml`, exportTruck1(catalog));
+  setTimeout(()=>downloadFile(`autoline_feed_${stamp}.xml`, exportAutoline(catalog)), 250);
+  setTimeout(()=>downloadFile(`machineseeker_feed_${stamp}.xml`, exportMachineseeker(catalog)), 500);
+  toast(`3 feeds generated · ${catalog.length} items each`, 'success');
+}
+
+/* ---------- Backup / Restore ---------- */
+function backupAll(){
+  const data = JSON.stringify(catalog, null, 2);
+  downloadFile(`galen_catalog_backup_${Date.now()}.json`, data, 'application/json');
+  toast('Backup downloaded', 'success');
+}
+function importBackup(file){
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if(!Array.isArray(data)) throw new Error('Invalid format');
+      if(!confirm(`Import ${data.length} items? This replaces the current catalog.`)) return;
+      catalog = data;
+      currentId = null;
+      save();
+      renderList();
+      $('editorEmpty').style.display = 'flex';
+      $('editorForm').style.display = 'none';
+      toast(`Imported ${data.length} items`, 'success');
+    } catch(err){
+      toast('Import failed: ' + err.message, 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* ---------- Event wiring ---------- */
+$('btnNew').onclick = newProduct;
+$('btnSave').onclick = saveCurrent;
+$('btnDelete').onclick = deleteCurrent;
+$('btnAddImage').onclick = ()=> addImageRow();
+$('searchBox').oninput = e => renderList(e.target.value);
+$('btnExportAllPlatforms').onclick = exportAllPlatforms;
+$('btnExportAll').onclick = backupAll;
+$('btnImport').onclick = ()=> $('importFile').click();
+$('importFile').onchange = e => { if(e.target.files[0]) importBackup(e.target.files[0]); };
+
+document.querySelectorAll('[data-export]').forEach(btn => {
+  btn.onclick = ()=> runExport(btn.dataset.export);
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if((e.ctrlKey || e.metaKey) && e.key === 's'){ e.preventDefault(); saveCurrent(); }
+  if((e.ctrlKey || e.metaKey) && e.key === 'n'){ e.preventDefault(); newProduct(); }
+});
+
+/* ============================================================
+   GITHUB CLOUD PUBLISH
+   Commits catalog.json to the repo via GitHub Contents API.
+   Cloudflare Pages then rebuilds the feeds automatically.
+   Token is stored ONLY in this browser's localStorage.
+============================================================ */
+const GH_KEY = 'galen_gh_settings_v1';
+function ghLoad(){ return JSON.parse(localStorage.getItem(GH_KEY) || '{}'); }
+function ghSaveSettings(){
+  const s = {
+    owner: $('gh_owner').value.trim(),
+    repo: $('gh_repo').value.trim(),
+    branch: $('gh_branch').value.trim() || 'main',
+    path: $('gh_path').value.trim() || 'catalog.json',
+    token: $('gh_token').value.trim()
+  };
+  localStorage.setItem(GH_KEY, JSON.stringify(s));
+  $('ghModal').style.display = 'none';
+  toast('Cloud settings saved', 'success');
+}
+function ghOpen(){
+  const s = ghLoad();
+  $('gh_owner').value = s.owner || '';
+  $('gh_repo').value = s.repo || 'galen-feeds';
+  $('gh_branch').value = s.branch || 'main';
+  $('gh_path').value = s.path || 'catalog.json';
+  $('gh_token').value = s.token || '';
+  $('ghModal').style.display = 'flex';
+}
+
+async function publishToGitHub(){
+  const s = ghLoad();
+  if(!s.owner || !s.repo || !s.token){
+    toast('Set up Cloud (⚙) first', 'error');
+    ghOpen();
+    return;
+  }
+  if(currentId) saveCurrent();
+  if(catalog.length === 0){ toast('Catalog is empty', 'error'); return; }
+
+  const api = `https://api.github.com/repos/${s.owner}/${s.repo}/contents/${s.path}`;
+  const headers = {
+    'Authorization': 'Bearer ' + s.token,
+    'Accept': 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28'
+  };
+  // Content must be base64 (handle UTF-8 safely)
+  const json = JSON.stringify(catalog, null, 2);
+  const contentB64 = btoa(unescape(encodeURIComponent(json)));
+
+  toast('Publishing to GitHub...', 'info');
+  $('btnPublish').textContent = '… Publishing';
+
+  try {
+    // 1. Get current file SHA (needed to update; 404 if new file)
+    let sha = undefined;
+    const getRes = await fetch(`${api}?ref=${encodeURIComponent(s.branch)}`, { headers });
+    if(getRes.status === 200){
+      const data = await getRes.json();
+      sha = data.sha;
+    } else if(getRes.status !== 404){
+      const err = await getRes.json().catch(()=>({}));
+      throw new Error(`Read failed (${getRes.status}): ${err.message || ''}`);
+    }
+
+    // 2. PUT new content
+    const body = {
+      message: `Update catalog · ${catalog.length} listings · ${new Date().toISOString()}`,
+      content: contentB64,
+      branch: s.branch
+    };
+    if(sha) body.sha = sha;
+
+    const putRes = await fetch(api, { method:'PUT', headers, body: JSON.stringify(body) });
+    if(!putRes.ok){
+      const err = await putRes.json().catch(()=>({}));
+      throw new Error(`Publish failed (${putRes.status}): ${err.message || ''}`);
+    }
+    toast(`Published! Cloudflare is rebuilding ${catalog.length} listings.`, 'success');
+    $('lastSave').textContent = 'Published · ' + new Date().toLocaleTimeString();
+  } catch(err){
+    toast(err.message, 'error');
+  } finally {
+    $('btnPublish').textContent = '▲ Publish';
+  }
+}
+
+$('btnGhSettings').onclick = ghOpen;
+$('ghSave').onclick = ghSaveSettings;
+$('ghCancel').onclick = ()=> $('ghModal').style.display = 'none';
+$('btnPublish').onclick = publishToGitHub;
+$('ghModal').onclick = e => { if(e.target.id === 'ghModal') $('ghModal').style.display = 'none'; };
+
+/* ---------- Seed example data on first run ---------- */
+if(catalog.length === 0){
+  catalog = [
+    {
+      id: uid(), ref: 'GG-2026-001', category: 'excavator-bucket', condition: 'new',
+      make: 'Galen', model: 'GB-1500', year: 2026,
+      price: 4200, currency: 'EUR', vat: 'excl',
+      weight: 850, hours: 0, carrier: '20-25 ton',
+      width: 1500, capacity: 1.2, material: 'Hardox 450',
+      city: 'Ankara', country: 'Türkiye', delivery: 'exw',
+      title_en: 'Galen 1500mm Digging Bucket · 20-25 ton excavators',
+      desc_en: 'Heavy-duty digging bucket manufactured from Hardox 450 wear plate. CAT-style tooth system. Suitable for general excavation, trenching and loading operations. Made in Türkiye.',
+      title_tr: 'Galen 1500mm Kazı Kovası · 20-25 ton ekskavatörler için',
+      desc_tr: 'Hardox 450 aşınma plakasından üretilmiş ağır hizmet tipi kazı kovası. CAT tipi diş sistemi. Genel kazı, kanal açma ve yükleme operasyonları için uygundur.',
+      images: ['https://example.com/photo1.jpg'],
+      contact: 'Galen Grup Sales', phone: '+90 312 ', email: 'sales@galengroup.com.tr',
+      created: new Date().toISOString()
+    }
+  ];
+  save();
+}
+
+renderList();
+updateStorageInfo();
+</script>
+</body>
+</html>
